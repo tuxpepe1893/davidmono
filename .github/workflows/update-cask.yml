@@ -1,0 +1,67 @@
+name: Update cask
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Update from the latest David Mono release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release="$(gh api repos/tuxpepe1893/davidmono/releases/latest)"
+          tag="$(jq -r .tag_name <<<"$release")"
+          version="${tag#v}"
+          asset_url="$(jq -r '.assets[] | select(.name == "DavidMono-'"$version"'.zip") | .browser_download_url' <<<"$release")"
+          test -n "$asset_url"
+          curl -fsSL "$asset_url" -o /tmp/david-mono.zip
+          sha256="$(sha256sum /tmp/david-mono.zip | cut -d' ' -f1)"
+          VERSION="$version" SHA256="$sha256" python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path("Casks/david-mono.rb")
+          text = path.read_text()
+          text = re.sub(r'^  version "[^"]+"$', f'  version "{os.environ["VERSION"]}"', text, flags=re.MULTILINE)
+          text = re.sub(r'^  sha256 "[0-9a-f]{64}"$', f'  sha256 "{os.environ["SHA256"]}"', text, flags=re.MULTILINE)
+          path.write_text(text)
+          PY
+      - run: ruby -c Casks/david-mono.rb
+      - run: python scripts/validate_cask.py
+      - name: Propose a new cask version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "Cask is already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          version="$(sed -n 's/^  version "\([^"]*\)"$/\1/p' Casks/david-mono.rb)"
+          branch="automation/update-cask"
+          git checkout -B "$branch"
+          git add Casks/david-mono.rb
+          git commit -m "Update David Mono to ${version}" -m "Co-authored-by: Codex <noreply@openai.com>"
+          git push --force-with-lease --set-upstream origin "$branch"
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "Update David Mono to ${version}" \
+            --body "Automated cask update for David Mono ${version}. The release archive and checksum were validated by CI." \
+            || gh pr edit "$branch" \
+              --title "Update David Mono to ${version}" \
+              --body "Automated cask update for David Mono ${version}. The release archive and checksum were validated by CI."

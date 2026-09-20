@@ -1,0 +1,47 @@
+name: Publish release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python scripts/build_david_mono.py
+      - run: python scripts/validate_david_mono.py
+      - name: Package fonts
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          package="DavidMono-${version}"
+          mkdir -p "dist/${package}/ttf" "dist/${package}/webfonts"
+          cp fonts/david-mono/ttf/* "dist/${package}/ttf/"
+          cp fonts/david-mono/webfonts/* "dist/${package}/webfonts/"
+          cp OFL.txt README.md THIRD_PARTY_NOTICES.md "dist/${package}/"
+          cp -R LICENSES "dist/${package}/LICENSES"
+          mkdir -p "dist/${package}/vendor/noto-sans-hebrew"
+          cp vendor/noto-sans-hebrew/OFL.txt "dist/${package}/vendor/noto-sans-hebrew/OFL.txt"
+          (cd dist && zip -qr "${package}.zip" "${package}")
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists"
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/DavidMono-${version}.zip" \
+            --title "David Mono ${version}" \
+            --generate-notes \
+            --verify-tag

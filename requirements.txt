@@ -1,0 +1,2 @@
+gftools
+fonttools[woff]>=4.59,<5
