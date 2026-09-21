@@ -3,6 +3,18 @@
 These instructions apply to every AI assistant and coding agent working in this
 repository, including Codex, Claude, Cursor, Antigravity, and similar tools.
 
+## Documentation requires approval
+
+Do not create a new documentation file or other non-code work product without
+the user's explicit approval. This includes Markdown or text documentation,
+plans, reports, design notes, summaries, and similar prose artifacts. A request
+to change code does not imply approval to create supporting documentation.
+
+An agent may edit an existing documentation file when the user explicitly asks
+for that edit or when it is a necessary part of an approved documentation
+change. Preserve upstream license texts, legal notices, and attributed documents
+unless the user explicitly requests a compatible change.
+
 ## Report issues discovered during development
 
 When development reveals a confirmed project defect, regression, limitation,

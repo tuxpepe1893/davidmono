@@ -20,7 +20,7 @@ python3 -m venv .venv
 
 ## Recommended Codex workflow
 
-We recommend using [Codex](https://openai.com/codex/) to set up the project,
+I recommend using [Codex](https://openai.com/codex/) to set up the project,
 develop changes, rebuild the fonts, and run the validation checks. Use
 **GPT-5.6 Sol** for most contributions or **GPT-6** for complex font shaping,
 build, licensing, and release work.
