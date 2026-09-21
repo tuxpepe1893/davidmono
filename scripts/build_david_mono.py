@@ -20,8 +20,7 @@ JETBRAINS_DIR = ROOT / "fonts" / "ttf"
 NOTO_SOURCE = ROOT / "vendor" / "noto-sans-hebrew" / "NotoSansHebrew-wdth-wght.ttf"
 OUTPUT_DIR = ROOT / "fonts" / "david-mono"
 
-# A near-normal width retains Noto's open proportions. Spacing glyphs are
-# optically centered below so wider Hebrew forms still fit the 600-unit cell.
+# Retain Noto's open proportions and proportional spacing for Hebrew text.
 NOTO_WIDTH = 95.0
 HEBREW_RANGES = ((0x0590, 0x05FF), (0xFB1D, 0xFB4F))
 
@@ -46,74 +45,6 @@ def hebrew_codepoints() -> set[int]:
     }
 
 
-def shift_anchor(anchor: object | None, amount: int) -> None:
-    if anchor is not None:
-        anchor.XCoordinate += amount
-
-
-def shift_gpos_base_anchors(font: TTFont, shifts: dict[str, int]) -> None:
-    """Keep mark anchors aligned after spacing glyphs are centered."""
-    if "GPOS" not in font:
-        return
-
-    for lookup in font["GPOS"].table.LookupList.Lookup:
-        for subtable in lookup.SubTable:
-            if lookup.LookupType == 4:  # Mark-to-base positioning
-                for glyph_name, record in zip(
-                    subtable.BaseCoverage.glyphs, subtable.BaseArray.BaseRecord
-                ):
-                    amount = shifts.get(glyph_name, 0)
-                    for anchor in record.BaseAnchor:
-                        shift_anchor(anchor, amount)
-            elif lookup.LookupType == 5:  # Mark-to-ligature positioning
-                for glyph_name, attachment in zip(
-                    subtable.LigatureCoverage.glyphs,
-                    subtable.LigatureArray.LigatureAttach,
-                ):
-                    amount = shifts.get(glyph_name, 0)
-                    for component in attachment.ComponentRecord:
-                        for anchor in component.LigatureAnchor:
-                            shift_anchor(anchor, amount)
-            elif lookup.LookupType == 6:  # Mark-to-mark positioning
-                for glyph_name, record in zip(
-                    subtable.Mark2Coverage.glyphs, subtable.Mark2Array.Mark2Record
-                ):
-                    amount = shifts.get(glyph_name, 0)
-                    for anchor in record.Mark2Anchor:
-                        shift_anchor(anchor, amount)
-
-
-def center_spacing_glyphs(font: TTFont, glyph_names: set[str]) -> None:
-    """Optically center Hebrew spacing glyphs in JetBrains Mono's cell."""
-    glyf = font["glyf"]
-    shifts: dict[str, int] = {}
-
-    for glyph_name in sorted(glyph_names):
-        advance, side_bearing = font["hmtx"][glyph_name]
-        if not advance:
-            continue
-
-        glyph = glyf[glyph_name]
-        glyph.expand(glyf)
-        glyph.recalcBounds(glyf)
-        if not hasattr(glyph, "xMin") or (
-            not hasattr(glyph, "components") and not hasattr(glyph, "coordinates")
-        ):
-            continue
-        amount = round(300 - (glyph.xMin + glyph.xMax) / 2)
-        shifts[glyph_name] = amount
-
-        if hasattr(glyph, "components"):
-            for component in glyph.components:
-                component.x += amount
-        else:
-            glyph.coordinates.translate((amount, 0))
-        glyph.recalcBounds(glyf)
-        font["hmtx"][glyph_name] = (600, side_bearing + amount)
-
-    shift_gpos_base_anchors(font, shifts)
-
-
 def make_hebrew_instance(weight: int, destination: Path) -> set[str]:
     font = TTFont(NOTO_SOURCE)
     instance = instantiateVariableFont(
@@ -135,7 +66,6 @@ def make_hebrew_instance(weight: int, destination: Path) -> set[str]:
     subsetter.subset(instance)
 
     glyphs = set(instance.getGlyphOrder()) - {".notdef", ".null", "nonmarkingreturn"}
-    center_spacing_glyphs(instance, glyphs)
     instance.save(destination, reorderTables=False)
     return glyphs
 
@@ -170,9 +100,9 @@ def rename_family(font: TTFont, style: str, italic: bool) -> None:
         ),
         1: legacy_family,
         2: legacy_style,
-        3: f"1.001;DM;DavidMono-{postscript_style}",
+        3: f"1.002;DM;DavidMono-{postscript_style}",
         4: full_name,
-        5: "Version 1.001",
+        5: "Version 1.002",
         6: f"DavidMono-{postscript_style}",
         7: "JetBrains Mono is a trademark of JetBrains s.r.o.",
         8: "David Mono contributors",
@@ -193,17 +123,12 @@ def rename_family(font: TTFont, style: str, italic: bool) -> None:
 
 
 def finish_font(font: TTFont, hebrew_glyphs: set[str], style: str, weight: int, italic: bool) -> None:
-    # Keep marks at zero advance and make every spacing Hebrew glyph occupy the
-    # same 600-unit cell as JetBrains Mono.
-    for glyph_name in hebrew_glyphs:
-        if glyph_name in font["hmtx"].metrics:
-            advance, side_bearing = font["hmtx"][glyph_name]
-            if advance:
-                font["hmtx"][glyph_name] = (600, side_bearing)
-
-    font["post"].isFixedPitch = 1
-    font["hhea"].advanceWidthMax = 600
-    font["OS/2"].xAvgCharWidth = 600
+    # Hebrew retains Noto advances, bearings and anchors; Latin remains monospaced.
+    font["post"].isFixedPitch = 0
+    font["hhea"].advanceWidthMax = max(a for a, _ in font["hmtx"].metrics.values())
+    font["OS/2"].panose.bProportion = 0
+    font["OS/2"].recalcAvgCharWidth(font)
+    font["head"].fontRevision = 1.002
     font["OS/2"].usWeightClass = weight
     font["OS/2"].usWidthClass = 5
     rename_family(font, style, italic)

@@ -1,18 +1,15 @@
 # David Mono
 
-David Mono is an amalgamated coding font:
+David Mono combines JetBrains Mono for English, Latin, Greek, Cyrillic, symbols
+and programming ligatures with Noto Sans Hebrew for Hebrew letters and marks.
 
-- JetBrains Mono supplies English, Latin, Greek, Cyrillic, symbols, and
-  programming ligatures.
-- Noto Sans Hebrew supplies Hebrew letters, points, cantillation marks, and
-  presentation forms.
+Hebrew uses natural proportional spacing: narrow letters have compact advances,
+and wide letters have room to breathe. Noto's original side bearings and mark
+anchors are preserved. English remains monospaced; Hebrew text no longer follows
+a fixed column grid. No Apple font data is used in the font.
 
-The Hebrew source uses open, near-normal Noto proportions and is optically
-centered in the same 600-unit character cells as JetBrains Mono. Its scale and
-rhythm are tuned to feel at home in macOS interfaces while retaining the
-OFL-licensed Noto outlines. This keeps mixed English and Hebrew text aligned in
-editors and terminals. Hebrew remains upright in the italic styles because
-Noto Sans Hebrew has no italic source.
+Hebrew remains upright in italic styles because Noto Sans Hebrew has no italic
+source.
 
 ## Install
 

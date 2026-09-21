@@ -7,7 +7,8 @@ import argparse
 import unicodedata
 from pathlib import Path
 
-from fontTools.pens.boundsPen import BoundsPen
+from fontTools.varLib.instancer import instantiateVariableFont
+from build_david_mono import NOTO_SOURCE, NOTO_WIDTH
 from fontTools.ttLib import TTFont
 
 
@@ -34,7 +35,7 @@ def validate_ttf(path: Path) -> None:
     style = font["name"].getDebugName(17)
     assert font["name"].getDebugName(16) == "David Mono"
     assert font["OS/2"].usWeightClass == style_weight(style)
-    assert font["post"].isFixedPitch == 1
+    assert font["post"].isFixedPitch == 0
     assert {"GDEF", "GPOS", "GSUB"} <= set(font.keys())
     assert all(codepoint in cmap for codepoint in range(0x05D0, 0x05EB))
 
@@ -43,25 +44,20 @@ def validate_ttf(path: Path) -> None:
     assert "2022 The Noto Project Authors" in notice
     assert "2024 The Noto Project Authors" in notice
 
-    glyph_set = font.getGlyphSet()
-    for codepoint in range(0x0590, 0x0600):
-        glyph_name = cmap.get(codepoint)
-        if not glyph_name:
-            continue
-        advance = font["hmtx"][glyph_name][0]
-        if unicodedata.category(chr(codepoint)).startswith("M"):
-            assert advance == 0, (path, hex(codepoint), advance)
-        else:
-            assert advance == 600, (path, hex(codepoint), advance)
-
-    # The main alphabet must be visually centered even when bold strokes
-    # overhang the nominal cell slightly.
-    for codepoint in range(0x05D0, 0x05EB):
-        pen = BoundsPen(glyph_set)
-        glyph_set[cmap[codepoint]].draw(pen)
-        assert pen.bounds is not None
-        center = (pen.bounds[0] + pen.bounds[2]) / 2
-        assert abs(center - 300) <= 1, (path, hex(codepoint), pen.bounds)
+    # Compare Hebrew metrics against the unmodified Noto instance, including marks.
+    source = instantiateVariableFont(TTFont(NOTO_SOURCE),
+        {"wght": style_weight(style), "wdth": NOTO_WIDTH}, inplace=True)
+    source_cmap = source.getBestCmap()
+    for codepoint, glyph_name in cmap.items():
+        if 0x0590 <= codepoint <= 0x05FF or 0xFB1D <= codepoint <= 0xFB4F:
+            assert font["hmtx"][glyph_name] == source["hmtx"][source_cmap[codepoint]], (path, hex(codepoint))
+            if unicodedata.category(chr(codepoint)).startswith("M"):
+                assert font["hmtx"][glyph_name][0] == 0
+    assert font["hmtx"][cmap[ord("י")]][0] < font["hmtx"][cmap[ord("ש")]][0]
+    for codepoint in range(0x20, 0x7F):
+        assert font["hmtx"][cmap[codepoint]][0] == 600, (path, codepoint)
+    assert font["name"].getDebugName(5) == "Version 1.002"
+    source.close()
 
     for table in font.keys():
         if table != "GlyphOrder":
