@@ -1,10 +1,10 @@
 cask "david-mono" do
-  version "1.0.1"
-  sha256 "ddc357b795b5bdf9778328b639c73b41f67958faba041a3b06128867a259917a"
+  version "1.0.2"
+  sha256 "ee814f604d7f439af3062f2a61454237a1999624f6c28299aa672f3391b5d93e"
 
   url "https://github.com/tuxpepe1893/davidmono/releases/download/v#{version}/DavidMono-#{version}.zip"
   name "David Mono"
-  desc "JetBrains Mono for Latin with Noto Sans Hebrew in one monospaced family"
+  desc "Monospaced JetBrains Mono for Latin with proportional Noto Sans Hebrew"
   homepage "https://github.com/tuxpepe1893/davidmono"
 
   livecheck do
