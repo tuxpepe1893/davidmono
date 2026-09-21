@@ -1,5 +1,7 @@
 # David Mono
 
+[![Build fonts](https://github.com/tuxpepe1893/davidmono/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/tuxpepe1893/davidmono/actions/workflows/build.yml)
+
 David Mono combines JetBrains Mono for English, Latin, Greek, Cyrillic, symbols
 and programming ligatures with Noto Sans Hebrew for Hebrew letters and marks.
 
