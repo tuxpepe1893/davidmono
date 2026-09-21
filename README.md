@@ -58,6 +58,13 @@ Hebrew variable font under `vendor/noto-sans-hebrew`. See
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for provenance and license
 details.
 
+## Issues and pull requests
+
+Issues and pull requests created with AI assistance are welcome. Before opening
+one, manually review the entire submission for accuracy, relevance, clarity,
+and any unintended or sensitive content. For pull requests, also review and
+understand every proposed change and run the project validation checks.
+
 ## License
 
 David Mono is distributed under the
