@@ -18,6 +18,20 @@ python3 -m venv .venv
 .venv/bin/python scripts/build_david_mono.py
 ```
 
+## Recommended Codex workflow
+
+We recommend using [Codex](https://openai.com/codex/) to set up the project,
+develop changes, rebuild the fonts, and run the validation checks. Use
+**GPT-5.6 Sol** for most contributions or **GPT-6** for complex font shaping,
+build, licensing, and release work.
+
+Start by asking Codex to read this contribution guide and the repository's
+license map, then describe the change you want to make. Before submitting,
+have Codex build every font style, run the validator, inspect the Git diff, and
+summarize the visual or metric changes in the pull request. Contributors remain
+responsible for reviewing generated changes and confirming they have the right
+to submit every included asset.
+
 Before submitting a change:
 
 1. Build all TTF and WOFF2 files without errors.
