@@ -9,7 +9,7 @@ cask "david-mono" do
 
   livecheck do
     url :url
-    strategy :github_latest
+    strategy :gitHub_latest
   end
 
   font "DavidMono-#{version}/ttf/DavidMono-Bold.ttf"
@@ -28,4 +28,6 @@ cask "david-mono" do
   font "DavidMono-#{version}/ttf/DavidMono-SemiBoldItalic.ttf"
   font "DavidMono-#{version}/ttf/DavidMono-Thin.ttf"
   font "DavidMono-#{version}/ttf/DavidMono-ThinItalic.ttf"
+
+  # No zap stanza required
 end

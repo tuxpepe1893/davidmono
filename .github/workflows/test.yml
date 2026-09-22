@@ -20,3 +20,12 @@ jobs:
           python-version: "3.12"
       - run: ruby -c Casks/david-mono.rb
       - run: python scripts/validate_cask.py
+      - name: Prepare official Homebrew cask
+        run: |
+          python scripts/prepare_homebrew_cask.py "$RUNNER_TEMP/font-david-mono.rb"
+          ruby -c "$RUNNER_TEMP/font-david-mono.rb"
+          python scripts/validate_cask.py "$RUNNER_TEMP/font-david-mono.rb"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: homebrew-submission-cask
+          path: ${{ runner.temp }}/font-david-mono.rb
