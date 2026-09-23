@@ -8,7 +8,7 @@ import unicodedata
 from pathlib import Path
 
 from fontTools.varLib.instancer import instantiateVariableFont
-from build_david_mono import NOTO_SOURCE, NOTO_WIDTH
+from build_david_mono import FONT_VERSION, NOTO_SOURCE, hebrew_axes
 from fontTools.ttLib import TTFont
 
 
@@ -45,8 +45,12 @@ def validate_ttf(path: Path) -> None:
     assert "2024 The Noto Project Authors" in notice
 
     # Compare Hebrew metrics against the unmodified Noto instance, including marks.
+    source_weight, source_width = hebrew_axes(
+        "Regular" if style in {"Regular", "Italic"} else style.removesuffix(" Italic"),
+        style_weight(style),
+    )
     source = instantiateVariableFont(TTFont(NOTO_SOURCE),
-        {"wght": style_weight(style), "wdth": NOTO_WIDTH}, inplace=True)
+        {"wght": source_weight, "wdth": source_width}, inplace=True)
     source_cmap = source.getBestCmap()
     for codepoint, glyph_name in cmap.items():
         if 0x0590 <= codepoint <= 0x05FF or 0xFB1D <= codepoint <= 0xFB4F:
@@ -56,7 +60,7 @@ def validate_ttf(path: Path) -> None:
     assert font["hmtx"][cmap[ord("י")]][0] < font["hmtx"][cmap[ord("ש")]][0]
     for codepoint in range(0x20, 0x7F):
         assert font["hmtx"][cmap[codepoint]][0] == 600, (path, codepoint)
-    assert font["name"].getDebugName(5) == "Version 1.002"
+    assert font["name"].getDebugName(5) == f"Version {FONT_VERSION}"
     source.close()
 
     for table in font.keys():

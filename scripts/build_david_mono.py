@@ -19,9 +19,17 @@ ROOT = Path(__file__).resolve().parents[1]
 JETBRAINS_DIR = ROOT / "fonts" / "ttf"
 NOTO_SOURCE = ROOT / "vendor" / "noto-sans-hebrew" / "NotoSansHebrew-wdth-wght.ttf"
 OUTPUT_DIR = ROOT / "fonts" / "david-mono"
+FONT_VERSION = "1.003"
 
 # Retain Noto's open proportions and proportional spacing for Hebrew text.
 NOTO_WIDTH = 95.0
+# Match the apparent stroke density and width of SF Hebrew's light weights
+# using the redistributable Noto outlines. Keep the public style weights below.
+LIGHT_HEBREW_AXES = {
+    "Thin": (150, 93.0),
+    "ExtraLight": (255, 93.0),
+    "Light": (340, 93.0),
+}
 HEBREW_RANGES = ((0x0590, 0x05FF), (0xFB1D, 0xFB4F))
 
 STYLES = (
@@ -45,10 +53,14 @@ def hebrew_codepoints() -> set[int]:
     }
 
 
-def make_hebrew_instance(weight: int, destination: Path) -> set[str]:
+def hebrew_axes(style: str, weight: int) -> tuple[int, float]:
+    return LIGHT_HEBREW_AXES.get(style, (weight, NOTO_WIDTH))
+
+
+def make_hebrew_instance(weight: int, width: float, destination: Path) -> set[str]:
     font = TTFont(NOTO_SOURCE)
     instance = instantiateVariableFont(
-        font, {"wght": weight, "wdth": NOTO_WIDTH}, inplace=True
+        font, {"wght": weight, "wdth": width}, inplace=True
     )
 
     options = subset.Options()
@@ -100,9 +112,9 @@ def rename_family(font: TTFont, style: str, italic: bool) -> None:
         ),
         1: legacy_family,
         2: legacy_style,
-        3: f"1.002;DM;DavidMono-{postscript_style}",
+        3: f"{FONT_VERSION};DM;DavidMono-{postscript_style}",
         4: full_name,
-        5: "Version 1.002",
+        5: f"Version {FONT_VERSION}",
         6: f"DavidMono-{postscript_style}",
         7: "JetBrains Mono is a trademark of JetBrains s.r.o.",
         8: "David Mono contributors",
@@ -128,7 +140,7 @@ def finish_font(font: TTFont, hebrew_glyphs: set[str], style: str, weight: int, 
     font["hhea"].advanceWidthMax = max(a for a, _ in font["hmtx"].metrics.values())
     font["OS/2"].panose.bProportion = 0
     font["OS/2"].recalcAvgCharWidth(font)
-    font["head"].fontRevision = 1.002
+    font["head"].fontRevision = float(FONT_VERSION)
     font["OS/2"].usWeightClass = weight
     font["OS/2"].usWidthClass = 5
     rename_family(font, style, italic)
@@ -145,7 +157,8 @@ def build_style(style: str, weight: int, italic: bool, ttf_dir: Path, web_dir: P
 
     with tempfile.TemporaryDirectory(prefix="david-mono-") as temp_dir:
         hebrew_path = Path(temp_dir) / "NotoSansHebrew.ttf"
-        hebrew_glyphs = make_hebrew_instance(weight, hebrew_path)
+        hebrew_weight, hebrew_width = hebrew_axes(style, weight)
+        hebrew_glyphs = make_hebrew_instance(hebrew_weight, hebrew_width, hebrew_path)
         source_font = TTFont(source, lazy=True)
         source_created = source_font["head"].created
         source_modified = source_font["head"].modified
