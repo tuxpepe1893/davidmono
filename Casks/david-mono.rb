@@ -1,6 +1,6 @@
 cask "david-mono" do
-  version "1.0.2"
-  sha256 "ee814f604d7f439af3062f2a61454237a1999624f6c28299aa672f3391b5d93e"
+  version "1.0.3"
+  sha256 "a7a4255f0d1e231a897bbc22cf44fbbf4cc6e4293be834f3c8ca590e0d256be8"
 
   url "https://github.com/tuxpepe1893/davidmono/releases/download/v#{version}/DavidMono-#{version}.zip"
   name "David Mono"
