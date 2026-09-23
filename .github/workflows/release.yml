@@ -17,8 +17,11 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: python scripts/build_david_mono.py
+      # Publish the font files committed at the tag, not a platform-specific rebuild.
       - run: python scripts/validate_david_mono.py
+      - run: python scripts/build_david_mono.py --output-dir "$RUNNER_TEMP/david-mono-rebuilt"
+      - run: python scripts/validate_david_mono.py "$RUNNER_TEMP/david-mono-rebuilt"
+      - run: python scripts/compare_david_mono.py fonts/david-mono "$RUNNER_TEMP/david-mono-rebuilt"
       - name: Package fonts
         run: |
           version="${GITHUB_REF_NAME#v}"
@@ -31,6 +34,14 @@ jobs:
           mkdir -p "dist/${package}/vendor/noto-sans-hebrew"
           cp vendor/noto-sans-hebrew/OFL.txt "dist/${package}/vendor/noto-sans-hebrew/OFL.txt"
           (cd dist && zip -qr "${package}.zip" "${package}")
+      - name: Verify packaged fonts match the tag
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          archive="dist/DavidMono-${version}.zip"
+          for font in fonts/david-mono/ttf/*.ttf fonts/david-mono/webfonts/*.woff2; do
+            archived="DavidMono-${version}/${font#fonts/david-mono/}"
+            cmp "$font" <(unzip -p "$archive" "$archived")
+          done
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
